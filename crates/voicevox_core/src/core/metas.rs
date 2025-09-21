@@ -1,6 +1,6 @@
 use std::fmt::{Debug, Display};
 
-use derive_more::From;
+use derive_more::{AsMut, AsRef, Binary, From, Into, LowerHex, Octal, UpperHex};
 use derive_new::new;
 use indexmap::IndexMap;
 use itertools::Itertools as _;
@@ -53,13 +53,18 @@ pub fn merge<'a>(metas: impl IntoIterator<Item = &'a CharacterMeta>) -> Vec<Char
     Hash,
     PartialOrd,
     From,
+    Into,
     derive_more::FromStr,
     Deserialize,
     Serialize,
     new,
     Debug,
+    UpperHex,
+    LowerHex,
+    Octal,
+    Binary,
 )]
-#[doc(alias = "VoicevoxStyleId")]
+#[cfg_attr(doc, doc(alias = "VoicevoxStyleId"))]
 pub struct StyleId(pub u32);
 
 impl Display for StyleId {
@@ -71,7 +76,9 @@ impl Display for StyleId {
 /// [<i>キャラクター</i>]のバージョン。
 ///
 /// [<i>キャラクター</i>]: CharacterMeta
-#[derive(PartialEq, Eq, Clone, Ord, PartialOrd, Deserialize, Serialize, new, Debug)]
+#[derive(
+    PartialEq, Eq, Clone, Ord, PartialOrd, Deserialize, Serialize, new, Hash, Debug, AsRef, AsMut,
+)]
 pub struct CharacterVersion(pub String);
 
 impl Display for CharacterVersion {
@@ -105,7 +112,7 @@ impl CharacterMeta {
     /// # Panics
     ///
     /// `speaker_uuid`が異なるときパニックする。
-    pub(crate) fn warn_diff_except_styles(&self, other: &Self) {
+    pub(super) fn warn_diff_except_styles(&self, other: &Self) {
         let Self {
             name: name1,
             styles: _,
@@ -144,7 +151,7 @@ impl CharacterMeta {
 }
 
 /// <i>スタイル</i>のメタ情報。
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, PartialEq, Debug)]
 #[non_exhaustive]
 pub struct StyleMeta {
     /// スタイルID。

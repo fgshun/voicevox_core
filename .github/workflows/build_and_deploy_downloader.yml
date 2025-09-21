@@ -37,13 +37,13 @@ defaults:
 
 jobs:
   deploy_and_deploy_downloader:
-    environment: ${{ inputs.code_signing && 'production' || '' }} # コード署名用のenvironment
+    environment: ${{ inputs.code_signing && 'code_signing' || '' }} # コード署名用のenvironment
     strategy:
       matrix:
         include:
           - name: download-windows-x64.exe
             target: x86_64-pc-windows-msvc
-            os: windows-2019
+            os: windows-2022
 
           - name: download-linux-x64
             target: x86_64-unknown-linux-gnu
@@ -76,6 +76,15 @@ jobs:
         uses: ./.github/actions/rust-toolchain-from-file
         with:
           targets: ${{ matrix.target }}
+
+      - name: Install cargo-binstall
+        uses: taiki-e/install-action@cargo-binstall
+
+      - name: Install cargo-edit
+        run: cargo binstall cargo-edit@^0.13 --no-confirm --log-level debug
+
+      - name: Set version
+        run: cargo set-version "$VERSION" --exclude voicevox_core_python_api --exclude xtask
 
       - name: Build downloader
         run: cargo build -v --release -p downloader --target ${{ matrix.target }}

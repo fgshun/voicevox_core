@@ -15,13 +15,13 @@ mod result_code;
 mod slice_owner;
 use self::drop_check::C_STRING_DROP_CHECKER;
 use self::helpers::{
-    accent_phrases_to_json, audio_query_model_to_json, ensure_utf8, into_result_code_with_error,
-    CApiError, UuidBytesExt as _,
+    CApiError, UuidBytesExt as _, accent_phrases_to_json, audio_query_model_to_json, ensure_utf8,
+    into_result_code_with_error,
 };
 use self::object::{CApiObject as _, CApiObjectPtrExt as _};
 use self::result_code::VoicevoxResultCode;
 use self::slice_owner::U8_SLICE_OWNER;
-use anstream::{stream::RawStream, AutoStream};
+use anstream::{AutoStream, stream::RawStream};
 use c_impls::{VoicevoxSynthesizerPtrExt as _, VoicevoxVoiceModelFilePtrExt as _};
 use chrono::SecondsFormat;
 use colorchoice::ColorChoice;
@@ -35,11 +35,11 @@ use std::mem::MaybeUninit;
 use std::os::raw::c_char;
 use std::ptr::NonNull;
 use std::sync::Once;
-use tracing_subscriber::fmt::format::Writer;
 use tracing_subscriber::EnvFilter;
+use tracing_subscriber::fmt::format::Writer;
 use uuid::Uuid;
 use voicevox_core::__internal::interop::{
-    BlockingTextAnalyzerExt as _, ToJsonValue as _, DEFAULT_PRIORITY, DEFAULT_WORD_TYPE,
+    BlockingTextAnalyzerExt as _, DEFAULT_PRIORITY, DEFAULT_WORD_TYPE, ToJsonValue as _,
 };
 use voicevox_core::{AccentPhrase, AudioQuery, StyleId};
 
@@ -93,7 +93,6 @@ fn init_logger_once() {
 //#[cfg(feature = "load-onnxruntime")]
 //pub const VOICEVOX_ONNXRUNTIME_LIB_VERSION: &CStr = ..;
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// ONNX Runtimeの動的ライブラリの、バージョン付きのファイル名。
 ///
@@ -105,14 +104,13 @@ fn init_logger_once() {
 ///
 /// \orig-impl{voicevox_get_onnxruntime_lib_versioned_filename}
 #[cfg(feature = "load-onnxruntime")]
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn voicevox_get_onnxruntime_lib_versioned_filename() -> *const c_char {
     init_logger_once();
     const FILENAME: &CStr = VoicevoxOnnxruntime::LIB_VERSIONED_FILENAME;
     C_STRING_DROP_CHECKER.blacklist(FILENAME).as_ptr()
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// ONNX Runtimeの動的ライブラリの、バージョン無しのファイル名。
 ///
@@ -122,7 +120,7 @@ pub extern "C" fn voicevox_get_onnxruntime_lib_versioned_filename() -> *const c_
 ///
 /// \orig-impl{voicevox_get_onnxruntime_lib_unversioned_filename}
 #[cfg(feature = "load-onnxruntime")]
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn voicevox_get_onnxruntime_lib_unversioned_filename() -> *const c_char {
     init_logger_once();
     const FILENAME: &CStr = VoicevoxOnnxruntime::LIB_UNVERSIONED_FILENAME;
@@ -145,7 +143,6 @@ pub struct VoicevoxLoadOnnxruntimeOptions {
     filename: *const c_char,
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// デフォルトの ::voicevox_onnxruntime_load_once のオプションを生成する。
 ///
@@ -157,7 +154,7 @@ pub struct VoicevoxLoadOnnxruntimeOptions {
 ///
 /// \no-orig-impl{voicevox_make_default_load_onnxruntime_options}
 #[cfg(feature = "load-onnxruntime")]
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn voicevox_make_default_load_onnxruntime_options() -> VoicevoxLoadOnnxruntimeOptions
 {
     init_logger_once();
@@ -180,7 +177,7 @@ pub extern "C" fn voicevox_make_default_load_onnxruntime_options() -> VoicevoxLo
 /// ```
 ///
 /// \orig-impl{VoicevoxOnnxruntime}
-#[cfg(any())]
+#[cfg(false)]
 pub struct VoicevoxOnnxruntime(!);
 
 /// cbindgen:ignore
@@ -188,7 +185,6 @@ pub struct VoicevoxOnnxruntime(!);
 #[repr(transparent)]
 pub struct VoicevoxOnnxruntime(voicevox_core::blocking::Onnxruntime);
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// ::VoicevoxOnnxruntime のインスタンスが既に作られているならそれを得る。
 ///
@@ -197,12 +193,11 @@ pub struct VoicevoxOnnxruntime(voicevox_core::blocking::Onnxruntime);
 /// @returns ::VoicevoxOnnxruntime のインスタンス
 ///
 /// \orig-impl{voicevox_onnxruntime_get}
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn voicevox_onnxruntime_get() -> Option<&'static VoicevoxOnnxruntime> {
     VoicevoxOnnxruntime::get()
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// ONNX Runtimeをロードして初期化する。
 ///
@@ -224,7 +219,7 @@ pub extern "C" fn voicevox_onnxruntime_get() -> Option<&'static VoicevoxOnnxrunt
 ///
 /// \orig-impl{voicevox_onnxruntime_load_once}
 #[cfg(feature = "load-onnxruntime")]
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn voicevox_onnxruntime_load_once(
     options: VoicevoxLoadOnnxruntimeOptions,
     out_onnxruntime: NonNull<&'static VoicevoxOnnxruntime>,
@@ -244,7 +239,6 @@ pub unsafe extern "C" fn voicevox_onnxruntime_load_once(
     })())
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// ONNX Runtimeを初期化する。
 ///
@@ -264,7 +258,7 @@ pub unsafe extern "C" fn voicevox_onnxruntime_load_once(
 ///
 /// \orig-impl{voicevox_onnxruntime_init_once}
 #[cfg(feature = "link-onnxruntime")]
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn voicevox_onnxruntime_init_once(
     out_onnxruntime: NonNull<&'static VoicevoxOnnxruntime>,
 ) -> VoicevoxResultCode {
@@ -302,7 +296,6 @@ pub struct OpenJtalkRc {
     _padding: MaybeUninit<[u8; 1]>,
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// ::OpenJtalkRc を<b>構築</b>(_construct_)する。
 ///
@@ -326,21 +319,22 @@ pub struct OpenJtalkRc {
 /// }
 ///
 /// \orig-impl{voicevox_open_jtalk_rc_new}
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn voicevox_open_jtalk_rc_new(
     open_jtalk_dic_dir: *const c_char,
     out_open_jtalk: NonNull<NonNull<OpenJtalkRc>>,
 ) -> VoicevoxResultCode {
     init_logger_once();
     into_result_code_with_error((|| {
-        let open_jtalk_dic_dir = ensure_utf8(CStr::from_ptr(open_jtalk_dic_dir))?;
+        // SAFETY: The safety contract must be upheld by the caller.
+        let open_jtalk_dic_dir = ensure_utf8(unsafe { CStr::from_ptr(open_jtalk_dic_dir) })?;
         let open_jtalk = OpenJtalkRc::new(open_jtalk_dic_dir)?;
-        out_open_jtalk.write_unaligned(open_jtalk);
+        // SAFETY: The safety contract must be upheld by the caller.
+        unsafe { out_open_jtalk.write_unaligned(open_jtalk) };
         Ok(())
     })())
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// OpenJtalkの使うユーザー辞書を設定する。
 ///
@@ -350,7 +344,7 @@ pub unsafe extern "C" fn voicevox_open_jtalk_rc_new(
 /// @param [in] user_dict ユーザー辞書
 ///
 /// \orig-impl{voicevox_open_jtalk_rc_use_user_dict}
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn voicevox_open_jtalk_rc_use_user_dict(
     open_jtalk: *const OpenJtalkRc,
     user_dict: *const VoicevoxUserDict,
@@ -362,7 +356,6 @@ pub extern "C" fn voicevox_open_jtalk_rc_use_user_dict(
     })())
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// 日本語のテキストを解析する。
 ///
@@ -373,7 +366,7 @@ pub extern "C" fn voicevox_open_jtalk_rc_use_user_dict(
 /// @param [out] output_accent_phrases_json 生成先
 ///
 /// \orig-impl{voicevox_open_jtalk_rc_use_user_dict}
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn voicevox_open_jtalk_rc_analyze(
     open_jtalk: *const OpenJtalkRc,
     text: *const c_char,
@@ -397,7 +390,6 @@ pub unsafe extern "C" fn voicevox_open_jtalk_rc_analyze(
     })())
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// ::OpenJtalkRc を<b>破棄</b>(_destruct_)する。
 ///
@@ -405,7 +397,7 @@ pub unsafe extern "C" fn voicevox_open_jtalk_rc_analyze(
 ///
 /// この関数の呼び出し後に破棄し終えた対象にアクセスすると、プロセスを異常終了する。
 ///
-/// @param [in] open_jtalk 破棄対象
+/// @param [in] open_jtalk 破棄対象。nullable
 ///
 /// \example{
 /// ```c
@@ -414,7 +406,7 @@ pub unsafe extern "C" fn voicevox_open_jtalk_rc_analyze(
 /// }
 ///
 /// \no-orig-impl{voicevox_open_jtalk_rc_delete}
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn voicevox_open_jtalk_rc_delete(open_jtalk: *mut OpenJtalkRc) {
     init_logger_once();
     open_jtalk.drop_body();
@@ -450,25 +442,23 @@ pub struct VoicevoxInitializeOptions {
     cpu_num_threads: u16,
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// デフォルトの初期化オプションを生成する
 /// @return デフォルト値が設定された初期化オプション
 ///
 /// \no-orig-impl{voicevox_make_default_initialize_options}
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn voicevox_make_default_initialize_options() -> VoicevoxInitializeOptions {
     init_logger_once();
     VoicevoxInitializeOptions::default()
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// voicevoxのバージョンを取得する。
 /// @return SemVerでフォーマットされたバージョン。
 ///
 /// \orig-impl{voicevox_get_version}
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn voicevox_get_version() -> *const c_char {
     init_logger_once();
     return C_STRING_DROP_CHECKER.blacklist(VERSION).as_ptr();
@@ -482,7 +472,6 @@ pub extern "C" fn voicevox_get_version() -> *const c_char {
     };
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// AccentPhraseの配列からAudioQueryを作る。
 ///
@@ -497,7 +486,7 @@ pub extern "C" fn voicevox_get_version() -> *const c_char {
 /// }
 ///
 /// \orig-impl{voicevox_audio_query_create_from_accent_phrases}
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn voicevox_audio_query_create_from_accent_phrases(
     accent_phrases_json: *const c_char,
     output_audio_query_json: NonNull<*mut c_char>,
@@ -536,7 +525,19 @@ pub struct VoicevoxVoiceModelFile {
 
 /// 音声モデルID。
 ///
+/// ::VoicevoxSynthesizer はこのIDをキーとして、音声モデルのロード・アンロードを行う。
+///
+/// 同じIDを持つ複数のVVMファイルがあるときは、ファイルとして新しい方を常に使うことが推奨される。[VOICEVOX/voicevox_vvm]で管理されているVVMでは、次の方針が取られている。
+///
+/// - VVMに含まれる声が変化せず、軽微な修正のみのときはIDを使い回してリリースする。
+/// - VVMに含まれる声が明確に変化するかもしくは削除されるような実質的な変更のときは、新しいIDを割り振ってリリースする。
+///
+/// これ以外は未定であり、更なるルールについては[VOICEVOX/voicevox_vvm#19]で議論される予定。
+///
 /// \orig-impl{VoicevoxVoiceModelId}
+///
+/// [VOICEVOX/voicevox_vvm]: https://github.com/VOICEVOX/voicevox_vvm
+/// [VOICEVOX/voicevox_vvm#19]: https://github.com/VOICEVOX/voicevox_vvm/issues/19
 pub type VoicevoxVoiceModelId<'a> = &'a [u8; 16];
 
 /// スタイルID。
@@ -546,7 +547,6 @@ pub type VoicevoxVoiceModelId<'a> = &'a [u8; 16];
 /// \orig-impl{VoicevoxStyleId}
 pub type VoicevoxStyleId = u32;
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// VVMファイルを開く。
 ///
@@ -561,33 +561,34 @@ pub type VoicevoxStyleId = u32;
 /// }
 ///
 /// \orig-impl{voicevox_voice_model_file_open}
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn voicevox_voice_model_file_open(
     path: *const c_char,
     out_model: NonNull<NonNull<VoicevoxVoiceModelFile>>,
 ) -> VoicevoxResultCode {
     init_logger_once();
     into_result_code_with_error((|| {
-        let path = ensure_utf8(CStr::from_ptr(path))?;
+        // SAFETY: The safety contract must be upheld by the caller.
+        let path = ensure_utf8(unsafe { CStr::from_ptr(path) })?;
         let model = VoicevoxVoiceModelFile::open(path)?;
-        out_model.write_unaligned(model);
+        // SAFETY: The safety contract must be upheld by the caller.
+        unsafe { out_model.write_unaligned(model) };
         Ok(())
     })())
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// ::VoicevoxVoiceModelFile からIDを取得する。
 ///
 /// @param [in] model 音声モデル
-/// @param [out] output_voice_model_id 音声モデルID
+/// @param [out] output_voice_model_id 音声モデルID。詳細は ::VoicevoxVoiceModelId
 ///
 /// \safety{
 /// - `output_voice_model_id`は<a href="#voicevox-core-safety">書き込みについて有効</a>でなければならない。
 /// }
 ///
 /// \orig-impl{voicevox_voice_model_file_id}
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn voicevox_voice_model_file_id(
     model: *const VoicevoxVoiceModelFile,
     output_voice_model_id: NonNull<[u8; 16]>,
@@ -597,7 +598,6 @@ pub unsafe extern "C" fn voicevox_voice_model_file_id(
     unsafe { output_voice_model_id.write_unaligned(id) };
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// ::VoicevoxVoiceModelFile からメタ情報を取得する。
 ///
@@ -608,7 +608,7 @@ pub unsafe extern "C" fn voicevox_voice_model_file_id(
 /// @returns メタ情報のJSON文字列
 ///
 /// \orig-impl{voicevox_voice_model_file_create_metas_json}
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn voicevox_voice_model_file_create_metas_json(
     model: *const VoicevoxVoiceModelFile,
 ) -> *mut c_char {
@@ -616,7 +616,6 @@ pub extern "C" fn voicevox_voice_model_file_create_metas_json(
     C_STRING_DROP_CHECKER.whitelist(model.metas()).into_raw()
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// ::VoicevoxVoiceModelFile を、所有しているファイルディスクリプタを閉じた上で<b>破棄</b>(_destruct_)する。ファイルの削除(_delete_)<b>ではない</b>。
 ///
@@ -624,10 +623,10 @@ pub extern "C" fn voicevox_voice_model_file_create_metas_json(
 ///
 /// この関数の呼び出し後に破棄し終えた対象にアクセスすると、プロセスを異常終了する。
 ///
-/// @param [in] model 破棄対象
+/// @param [in] model 破棄対象。nullable
 ///
 /// \no-orig-impl{voicevox_voice_model_file_delete}
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn voicevox_voice_model_file_delete(model: *mut VoicevoxVoiceModelFile) {
     init_logger_once();
     model.drop_body();
@@ -644,7 +643,6 @@ pub struct VoicevoxSynthesizer {
     _padding: MaybeUninit<[u8; 1]>,
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// ::VoicevoxSynthesizer を<b>構築</b>(_construct_)する。
 ///
@@ -661,7 +659,7 @@ pub struct VoicevoxSynthesizer {
 /// }
 ///
 /// \orig-impl{voicevox_synthesizer_new}
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn voicevox_synthesizer_new(
     onnxruntime: &'static VoicevoxOnnxruntime,
     open_jtalk: *const OpenJtalkRc,
@@ -671,12 +669,12 @@ pub unsafe extern "C" fn voicevox_synthesizer_new(
     init_logger_once();
     into_result_code_with_error((|| {
         let synthesizer = VoicevoxSynthesizer::new(onnxruntime, open_jtalk, options)?;
-        out_synthesizer.write_unaligned(synthesizer);
+        // SAFETY: The safety contract must be upheld by the caller.
+        unsafe { out_synthesizer.write_unaligned(synthesizer) };
         Ok(())
     })())
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// ::VoicevoxSynthesizer を<b>破棄</b>(_destruct_)する。
 ///
@@ -684,16 +682,15 @@ pub unsafe extern "C" fn voicevox_synthesizer_new(
 ///
 /// この関数の呼び出し後に破棄し終えた対象にアクセスすると、プロセスを異常終了する。
 ///
-/// @param [in] synthesizer 破棄対象
+/// @param [in] synthesizer 破棄対象。nullable
 ///
 /// \no-orig-impl{voicevox_synthesizer_delete}
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn voicevox_synthesizer_delete(synthesizer: *mut VoicevoxSynthesizer) {
     init_logger_once();
     synthesizer.drop_body();
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// 音声モデルを読み込む。
 ///
@@ -703,7 +700,7 @@ pub extern "C" fn voicevox_synthesizer_delete(synthesizer: *mut VoicevoxSynthesi
 /// @returns 結果コード
 ///
 /// \orig-impl{voicevox_synthesizer_load_voice_model}
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn voicevox_synthesizer_load_voice_model(
     synthesizer: *const VoicevoxSynthesizer,
     model: *const VoicevoxVoiceModelFile,
@@ -712,7 +709,6 @@ pub extern "C" fn voicevox_synthesizer_load_voice_model(
     into_result_code_with_error(synthesizer.load_voice_model(&model.body()))
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// 音声モデルの読み込みを解除する。
 ///
@@ -726,7 +722,7 @@ pub extern "C" fn voicevox_synthesizer_load_voice_model(
 /// }
 ///
 /// \orig-impl{voicevox_synthesizer_unload_voice_model}
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn voicevox_synthesizer_unload_voice_model(
     synthesizer: *const VoicevoxSynthesizer,
     model_id: VoicevoxVoiceModelId<'_>,
@@ -736,7 +732,6 @@ pub extern "C" fn voicevox_synthesizer_unload_voice_model(
     into_result_code_with_error(synthesizer.unload_voice_model(model_id).map_err(Into::into))
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// ::VoicevoxOnnxruntime のインスタンスを得る。
 ///
@@ -745,14 +740,13 @@ pub extern "C" fn voicevox_synthesizer_unload_voice_model(
 /// @returns ::VoicevoxOnnxruntime のインスタンス
 ///
 /// \orig-impl{voicevox_synthesizer_get_onnxruntime}
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn voicevox_synthesizer_get_onnxruntime(
     synthesizer: *const VoicevoxSynthesizer,
 ) -> &'static VoicevoxOnnxruntime {
     synthesizer.onnxruntime()
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// ハードウェアアクセラレーションがGPUモードか判定する。
 ///
@@ -761,7 +755,7 @@ pub extern "C" fn voicevox_synthesizer_get_onnxruntime(
 /// @returns GPUモードかどうか
 ///
 /// \orig-impl{voicevox_synthesizer_is_gpu_mode}
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn voicevox_synthesizer_is_gpu_mode(
     synthesizer: *const VoicevoxSynthesizer,
 ) -> bool {
@@ -769,7 +763,6 @@ pub extern "C" fn voicevox_synthesizer_is_gpu_mode(
     synthesizer.body().is_gpu_mode()
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// 指定したIDの音声モデルが読み込まれているか判定する。
 ///
@@ -783,7 +776,7 @@ pub extern "C" fn voicevox_synthesizer_is_gpu_mode(
 /// }
 ///
 /// \orig-impl{voicevox_synthesizer_is_loaded_voice_model}
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn voicevox_synthesizer_is_loaded_voice_model(
     synthesizer: *const VoicevoxSynthesizer,
     model_id: VoicevoxVoiceModelId<'_>,
@@ -793,7 +786,6 @@ pub extern "C" fn voicevox_synthesizer_is_loaded_voice_model(
     synthesizer.body().is_loaded_voice_model(model_id)
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// 今読み込んでいる音声モデルのメタ情報を、JSONで取得する。
 ///
@@ -804,7 +796,7 @@ pub extern "C" fn voicevox_synthesizer_is_loaded_voice_model(
 /// @return メタ情報のJSON文字列
 ///
 /// \orig-impl{voicevox_synthesizer_create_metas_json}
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn voicevox_synthesizer_create_metas_json(
     synthesizer: *const VoicevoxSynthesizer,
 ) -> *mut c_char {
@@ -813,7 +805,6 @@ pub extern "C" fn voicevox_synthesizer_create_metas_json(
     C_STRING_DROP_CHECKER.whitelist(metas).into_raw()
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// ONNX Runtimeとして利用可能なデバイスの情報を、JSONで取得する。
 ///
@@ -839,7 +830,7 @@ pub extern "C" fn voicevox_synthesizer_create_metas_json(
 /// }
 ///
 /// \orig-impl{voicevox_onnxruntime_create_supported_devices_json}
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn voicevox_onnxruntime_create_supported_devices_json(
     onnxruntime: &'static VoicevoxOnnxruntime,
     output_supported_devices_json: NonNull<*mut c_char>,
@@ -847,16 +838,18 @@ pub unsafe extern "C" fn voicevox_onnxruntime_create_supported_devices_json(
     init_logger_once();
     into_result_code_with_error((|| {
         let supported_devices = CString::new(onnxruntime.0.supported_devices()?.to_json()).unwrap();
-        output_supported_devices_json.write_unaligned(
-            C_STRING_DROP_CHECKER
-                .whitelist(supported_devices)
-                .into_raw(),
-        );
+        unsafe {
+            // SAFETY: The safety contract must be upheld by the caller.
+            output_supported_devices_json.write_unaligned(
+                C_STRING_DROP_CHECKER
+                    .whitelist(supported_devices)
+                    .into_raw(),
+            );
+        }
         Ok(())
     })())
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// AquesTalk風記法から、AudioQueryをJSONとして生成する。
 ///
@@ -884,7 +877,7 @@ pub unsafe extern "C" fn voicevox_onnxruntime_create_supported_devices_json(
 /// }
 ///
 /// \orig-impl{voicevox_synthesizer_create_audio_query_from_kana}
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn voicevox_synthesizer_create_audio_query_from_kana(
     synthesizer: *const VoicevoxSynthesizer,
     kana: *const c_char,
@@ -893,7 +886,8 @@ pub unsafe extern "C" fn voicevox_synthesizer_create_audio_query_from_kana(
 ) -> VoicevoxResultCode {
     init_logger_once();
     into_result_code_with_error((|| {
-        let kana = CStr::from_ptr(kana);
+        // SAFETY: The safety contract must be upheld by the caller.
+        let kana = unsafe { CStr::from_ptr(kana) };
         let kana = ensure_utf8(kana)?;
 
         let audio_query = synthesizer
@@ -901,13 +895,15 @@ pub unsafe extern "C" fn voicevox_synthesizer_create_audio_query_from_kana(
             .create_audio_query_from_kana(kana, StyleId::new(style_id))?;
         let audio_query = CString::new(audio_query_model_to_json(&audio_query))
             .expect("should not contain '\\0'");
-        output_audio_query_json
-            .write_unaligned(C_STRING_DROP_CHECKER.whitelist(audio_query).into_raw());
+        unsafe {
+            // SAFETY: The safety contract must be upheld by the caller.
+            output_audio_query_json
+                .write_unaligned(C_STRING_DROP_CHECKER.whitelist(audio_query).into_raw());
+        }
         Ok(())
     })())
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// 日本語テキストから、AudioQueryをJSONとして生成する。
 ///
@@ -940,7 +936,7 @@ pub unsafe extern "C" fn voicevox_synthesizer_create_audio_query_from_kana(
 /// \orig-impl{voicevox_synthesizer_create_audio_query}
 ///
 /// [テキスト音声合成の流れ]: https://github.com/VOICEVOX/voicevox_core/blob/main/docs/guide/user/tts-process.md
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn voicevox_synthesizer_create_audio_query(
     synthesizer: *const VoicevoxSynthesizer,
     text: *const c_char,
@@ -949,7 +945,8 @@ pub unsafe extern "C" fn voicevox_synthesizer_create_audio_query(
 ) -> VoicevoxResultCode {
     init_logger_once();
     into_result_code_with_error((|| {
-        let text = CStr::from_ptr(text);
+        // SAFETY: The safety contract must be upheld by the caller.
+        let text = unsafe { CStr::from_ptr(text) };
         let text = ensure_utf8(text)?;
 
         let audio_query = synthesizer
@@ -957,13 +954,15 @@ pub unsafe extern "C" fn voicevox_synthesizer_create_audio_query(
             .create_audio_query(text, StyleId::new(style_id))?;
         let audio_query = CString::new(audio_query_model_to_json(&audio_query))
             .expect("should not contain '\\0'");
-        output_audio_query_json
-            .write_unaligned(C_STRING_DROP_CHECKER.whitelist(audio_query).into_raw());
+        unsafe {
+            // SAFETY: The safety contract must be upheld by the caller.
+            output_audio_query_json
+                .write_unaligned(C_STRING_DROP_CHECKER.whitelist(audio_query).into_raw());
+        }
         Ok(())
     })())
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// AquesTalk風記法から、AccentPhrase (アクセント句)の配列をJSON形式で生成する。
 ///
@@ -992,7 +991,7 @@ pub unsafe extern "C" fn voicevox_synthesizer_create_audio_query(
 /// }
 ///
 /// \orig-impl{voicevox_synthesizer_create_accent_phrases_from_kana}
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn voicevox_synthesizer_create_accent_phrases_from_kana(
     synthesizer: *const VoicevoxSynthesizer,
     kana: *const c_char,
@@ -1001,19 +1000,22 @@ pub unsafe extern "C" fn voicevox_synthesizer_create_accent_phrases_from_kana(
 ) -> VoicevoxResultCode {
     init_logger_once();
     into_result_code_with_error((|| {
-        let kana = ensure_utf8(CStr::from_ptr(kana))?;
+        // SAFETY: The safety contract must be upheld by the caller.
+        let kana = ensure_utf8(unsafe { CStr::from_ptr(kana) })?;
         let accent_phrases = synthesizer
             .body()
             .create_accent_phrases_from_kana(kana, StyleId::new(style_id))?;
         let accent_phrases = CString::new(accent_phrases_to_json(&accent_phrases))
             .expect("should not contain '\\0'");
-        output_accent_phrases_json
-            .write_unaligned(C_STRING_DROP_CHECKER.whitelist(accent_phrases).into_raw());
+        unsafe {
+            // SAFETY: The safety contract must be upheld by the caller.
+            output_accent_phrases_json
+                .write_unaligned(C_STRING_DROP_CHECKER.whitelist(accent_phrases).into_raw());
+        }
         Ok(())
     })())
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// 日本語テキストから、AccentPhrase (アクセント句)の配列をJSON形式で生成する。
 ///
@@ -1046,7 +1048,7 @@ pub unsafe extern "C" fn voicevox_synthesizer_create_accent_phrases_from_kana(
 /// \orig-impl{voicevox_synthesizer_create_accent_phrases}
 ///
 /// [テキスト音声合成の流れ]: https://github.com/VOICEVOX/voicevox_core/blob/main/docs/guide/user/tts-process.md
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn voicevox_synthesizer_create_accent_phrases(
     synthesizer: *const VoicevoxSynthesizer,
     text: *const c_char,
@@ -1055,19 +1057,22 @@ pub unsafe extern "C" fn voicevox_synthesizer_create_accent_phrases(
 ) -> VoicevoxResultCode {
     init_logger_once();
     into_result_code_with_error((|| {
-        let text = ensure_utf8(CStr::from_ptr(text))?;
+        // SAFETY: The safety contract must be upheld by the caller.
+        let text = ensure_utf8(unsafe { CStr::from_ptr(text) })?;
         let accent_phrases = synthesizer
             .body()
             .create_accent_phrases(text, StyleId::new(style_id))?;
         let accent_phrases = CString::new(accent_phrases_to_json(&accent_phrases))
             .expect("should not contain '\\0'");
-        output_accent_phrases_json
-            .write_unaligned(C_STRING_DROP_CHECKER.whitelist(accent_phrases).into_raw());
+        unsafe {
+            // SAFETY: The safety contract must be upheld by the caller.
+            output_accent_phrases_json
+                .write_unaligned(C_STRING_DROP_CHECKER.whitelist(accent_phrases).into_raw());
+        }
         Ok(())
     })())
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// AccentPhraseの配列の音高・音素長を、特定の声で生成しなおす。
 ///
@@ -1091,7 +1096,7 @@ pub unsafe extern "C" fn voicevox_synthesizer_create_accent_phrases(
 /// \orig-impl{voicevox_synthesizer_replace_mora_data}
 ///
 /// [テキスト音声合成の流れ]: https://github.com/VOICEVOX/voicevox_core/blob/main/docs/guide/user/tts-process.md
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn voicevox_synthesizer_replace_mora_data(
     synthesizer: *const VoicevoxSynthesizer,
     accent_phrases_json: *const c_char,
@@ -1100,21 +1105,24 @@ pub unsafe extern "C" fn voicevox_synthesizer_replace_mora_data(
 ) -> VoicevoxResultCode {
     init_logger_once();
     into_result_code_with_error((|| {
+        // SAFETY: The safety contract must be upheld by the caller.
         let accent_phrases: Vec<AccentPhrase> =
-            serde_json::from_str(ensure_utf8(CStr::from_ptr(accent_phrases_json))?)
+            serde_json::from_str(ensure_utf8(unsafe { CStr::from_ptr(accent_phrases_json) })?)
                 .map_err(CApiError::InvalidAccentPhrase)?;
         let accent_phrases = synthesizer
             .body()
             .replace_mora_data(&accent_phrases, StyleId::new(style_id))?;
         let accent_phrases = CString::new(accent_phrases_to_json(&accent_phrases))
             .expect("should not contain '\\0'");
-        output_accent_phrases_json
-            .write_unaligned(C_STRING_DROP_CHECKER.whitelist(accent_phrases).into_raw());
+        unsafe {
+            // SAFETY: The safety contract must be upheld by the caller.
+            output_accent_phrases_json
+                .write_unaligned(C_STRING_DROP_CHECKER.whitelist(accent_phrases).into_raw());
+        }
         Ok(())
     })())
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// AccentPhraseの配列の音素長を、特定の声で生成しなおす。
 ///
@@ -1133,7 +1141,7 @@ pub unsafe extern "C" fn voicevox_synthesizer_replace_mora_data(
 /// }
 ///
 /// \orig-impl{voicevox_synthesizer_replace_phoneme_length}
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn voicevox_synthesizer_replace_phoneme_length(
     synthesizer: *const VoicevoxSynthesizer,
     accent_phrases_json: *const c_char,
@@ -1142,21 +1150,24 @@ pub unsafe extern "C" fn voicevox_synthesizer_replace_phoneme_length(
 ) -> VoicevoxResultCode {
     init_logger_once();
     into_result_code_with_error((|| {
+        // SAFETY: The safety contract must be upheld by the caller.
         let accent_phrases: Vec<AccentPhrase> =
-            serde_json::from_str(ensure_utf8(CStr::from_ptr(accent_phrases_json))?)
+            serde_json::from_str(ensure_utf8(unsafe { CStr::from_ptr(accent_phrases_json) })?)
                 .map_err(CApiError::InvalidAccentPhrase)?;
         let accent_phrases = synthesizer
             .body()
             .replace_phoneme_length(&accent_phrases, StyleId::new(style_id))?;
         let accent_phrases = CString::new(accent_phrases_to_json(&accent_phrases))
             .expect("should not contain '\\0'");
-        output_accent_phrases_json
-            .write_unaligned(C_STRING_DROP_CHECKER.whitelist(accent_phrases).into_raw());
+        unsafe {
+            // SAFETY: The safety contract must be upheld by the caller.
+            output_accent_phrases_json
+                .write_unaligned(C_STRING_DROP_CHECKER.whitelist(accent_phrases).into_raw());
+        }
         Ok(())
     })())
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// AccentPhraseの配列の音高を、特定の声で生成しなおす。
 ///
@@ -1175,7 +1186,7 @@ pub unsafe extern "C" fn voicevox_synthesizer_replace_phoneme_length(
 /// }
 ///
 /// \orig-impl{voicevox_synthesizer_replace_mora_pitch}
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn voicevox_synthesizer_replace_mora_pitch(
     synthesizer: *const VoicevoxSynthesizer,
     accent_phrases_json: *const c_char,
@@ -1184,16 +1195,20 @@ pub unsafe extern "C" fn voicevox_synthesizer_replace_mora_pitch(
 ) -> VoicevoxResultCode {
     init_logger_once();
     into_result_code_with_error((|| {
+        // SAFETY: The safety contract must be upheld by the caller.
         let accent_phrases: Vec<AccentPhrase> =
-            serde_json::from_str(ensure_utf8(CStr::from_ptr(accent_phrases_json))?)
+            serde_json::from_str(ensure_utf8(unsafe { CStr::from_ptr(accent_phrases_json) })?)
                 .map_err(CApiError::InvalidAccentPhrase)?;
         let accent_phrases = synthesizer
             .body()
             .replace_mora_pitch(&accent_phrases, StyleId::new(style_id))?;
         let accent_phrases = CString::new(accent_phrases_to_json(&accent_phrases))
             .expect("should not contain '\\0'");
-        output_accent_phrases_json
-            .write_unaligned(C_STRING_DROP_CHECKER.whitelist(accent_phrases).into_raw());
+        unsafe {
+            // SAFETY: The safety contract must be upheld by the caller.
+            output_accent_phrases_json
+                .write_unaligned(C_STRING_DROP_CHECKER.whitelist(accent_phrases).into_raw());
+        }
         Ok(())
     })())
 }
@@ -1207,19 +1222,17 @@ pub struct VoicevoxSynthesisOptions {
     enable_interrogative_upspeak: bool,
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// デフォルトの `voicevox_synthesizer_synthesis` のオプションを生成する
 /// @return デフォルト値が設定された `voicevox_synthesizer_synthesis` のオプション
 ///
 /// \no-orig-impl{voicevox_make_default_synthesis_options}
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn voicevox_make_default_synthesis_options() -> VoicevoxSynthesisOptions {
     init_logger_once();
     VoicevoxSynthesisOptions::default()
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// AudioQueryから音声合成を行う。
 ///
@@ -1241,7 +1254,7 @@ pub extern "C" fn voicevox_make_default_synthesis_options() -> VoicevoxSynthesis
 /// }
 ///
 /// \orig-impl{voicevox_synthesizer_synthesis}
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn voicevox_synthesizer_synthesis(
     synthesizer: *const VoicevoxSynthesizer,
     audio_query_json: *const c_char,
@@ -1252,7 +1265,8 @@ pub unsafe extern "C" fn voicevox_synthesizer_synthesis(
 ) -> VoicevoxResultCode {
     init_logger_once();
     into_result_code_with_error((|| {
-        let audio_query_json = CStr::from_ptr(audio_query_json)
+        // SAFETY: The safety contract must be upheld by the caller.
+        let audio_query_json = unsafe { CStr::from_ptr(audio_query_json) }
             .to_str()
             .map_err(|_| CApiError::InvalidUtf8Input)?;
         let audio_query: AudioQuery =
@@ -1265,7 +1279,8 @@ pub unsafe extern "C" fn voicevox_synthesizer_synthesis(
             .synthesis(&audio_query, StyleId::new(style_id))
             .enable_interrogative_upspeak(enable_interrogative_upspeak)
             .perform()?;
-        U8_SLICE_OWNER.own_and_lend(wav, output_wav, output_wav_length);
+        // SAFETY: The safety contract must be upheld by the caller.
+        unsafe { U8_SLICE_OWNER.own_and_lend(wav, output_wav, output_wav_length) };
         Ok(())
     })())
 }
@@ -1279,19 +1294,17 @@ pub struct VoicevoxTtsOptions {
     enable_interrogative_upspeak: bool,
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// デフォルトのテキスト音声合成オプションを生成する
 /// @return テキスト音声合成オプション
 ///
 /// \no-orig-impl{voicevox_make_default_tts_options}
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn voicevox_make_default_tts_options() -> VoicevoxTtsOptions {
     init_logger_once();
     VoicevoxTtsOptions::default()
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// AquesTalk風記法から音声合成を行う。
 ///
@@ -1313,7 +1326,7 @@ pub extern "C" fn voicevox_make_default_tts_options() -> VoicevoxTtsOptions {
 /// }
 ///
 /// \orig-impl{voicevox_synthesizer_tts_from_kana}
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn voicevox_synthesizer_tts_from_kana(
     synthesizer: *const VoicevoxSynthesizer,
     kana: *const c_char,
@@ -1324,7 +1337,8 @@ pub unsafe extern "C" fn voicevox_synthesizer_tts_from_kana(
 ) -> VoicevoxResultCode {
     init_logger_once();
     into_result_code_with_error((|| {
-        let kana = ensure_utf8(CStr::from_ptr(kana))?;
+        // SAFETY: The safety contract must be upheld by the caller.
+        let kana = ensure_utf8(unsafe { CStr::from_ptr(kana) })?;
         let VoicevoxTtsOptions {
             enable_interrogative_upspeak,
         } = options;
@@ -1333,12 +1347,12 @@ pub unsafe extern "C" fn voicevox_synthesizer_tts_from_kana(
             .tts_from_kana(kana, StyleId::new(style_id))
             .enable_interrogative_upspeak(enable_interrogative_upspeak)
             .perform()?;
-        U8_SLICE_OWNER.own_and_lend(output, output_wav, output_wav_length);
+        // SAFETY: The safety contract must be upheld by the caller.
+        unsafe { U8_SLICE_OWNER.own_and_lend(output, output_wav, output_wav_length) };
         Ok(())
     })())
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// 日本語テキストから音声合成を行う。
 ///
@@ -1365,7 +1379,7 @@ pub unsafe extern "C" fn voicevox_synthesizer_tts_from_kana(
 /// \orig-impl{voicevox_synthesizer_tts}
 ///
 /// [テキスト音声合成の流れ]: https://github.com/VOICEVOX/voicevox_core/blob/main/docs/guide/user/tts-process.md
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn voicevox_synthesizer_tts(
     synthesizer: *const VoicevoxSynthesizer,
     text: *const c_char,
@@ -1376,7 +1390,8 @@ pub unsafe extern "C" fn voicevox_synthesizer_tts(
 ) -> VoicevoxResultCode {
     init_logger_once();
     into_result_code_with_error((|| {
-        let text = ensure_utf8(CStr::from_ptr(text))?;
+        // SAFETY: The safety contract must be upheld by the caller.
+        let text = ensure_utf8(unsafe { CStr::from_ptr(text) })?;
         let VoicevoxTtsOptions {
             enable_interrogative_upspeak,
         } = options;
@@ -1385,19 +1400,19 @@ pub unsafe extern "C" fn voicevox_synthesizer_tts(
             .tts(text, StyleId::new(style_id))
             .enable_interrogative_upspeak(enable_interrogative_upspeak)
             .perform()?;
-        U8_SLICE_OWNER.own_and_lend(output, output_wav, output_wav_length);
+        // SAFETY: The safety contract must be upheld by the caller.
+        unsafe { U8_SLICE_OWNER.own_and_lend(output, output_wav, output_wav_length) };
         Ok(())
     })())
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// JSON文字列を解放する。
 ///
-/// @param [in] json 解放するJSON文字列
+/// @param [in] json 解放するJSON文字列。nullable
 ///
 /// \safety{
-/// - `json`は以下のAPIで得られたポインタでなくてはいけない。
+/// - `json`がヌルポインタでないならば、以下のAPIで得られたポインタでなくてはいけない。
 ///     - ::voicevox_audio_query_create_from_accent_phrases
 ///     - ::voicevox_onnxruntime_create_supported_devices_json
 ///     - ::voicevox_voice_model_file_create_metas_json
@@ -1410,39 +1425,40 @@ pub unsafe extern "C" fn voicevox_synthesizer_tts(
 ///     - ::voicevox_synthesizer_replace_mora_pitch
 ///     - ::voicevox_user_dict_to_json
 /// - 文字列の長さは生成時より変更されていてはならない。
-/// - `json`は<a href="#voicevox-core-safety">読み込みと書き込みについて有効</a>でなければならない。
-/// - `json`は以後<b>ダングリングポインタ</b>(_dangling pointer_)として扱われなくてはならない。
+/// - `json`がヌルポインタでないならば、<a href="#voicevox-core-safety">読み込みと書き込みについて有効</a>でなければならない。
+/// - `json`がヌルポインタでないならば、以後<b>ダングリングポインタ</b>(_dangling pointer_)として扱われなくてはならない。
 /// }
 ///
 /// \no-orig-impl{voicevox_json_free}
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn voicevox_json_free(json: *mut c_char) {
     init_logger_once();
-    drop(CString::from_raw(C_STRING_DROP_CHECKER.check(json)));
+    if let Some(json) = C_STRING_DROP_CHECKER.check(json) {
+        // SAFETY: The safety contract must be upheld by the caller.
+        drop(unsafe { CString::from_raw(json.as_ptr()) });
+    }
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// WAVデータを解放する。
 ///
-/// @param [in] wav 解放するWAVデータ
+/// @param [in] wav 解放するWAVデータ。nullable
 ///
 /// \safety{
-/// - `wav`は以下のAPIで得られたポインタでなくてはいけない。
+/// - `wav`がヌルポインタでないならば、以下のAPIで得られたポインタでなくてはいけない。
 ///     - ::voicevox_synthesizer_synthesis
 ///     - ::voicevox_synthesizer_tts
-/// - `wav`は<a href="#voicevox-core-safety">読み込みと書き込みについて有効</a>でなければならない。
-/// - `wav`は以後<b>ダングリングポインタ</b>(_dangling pointer_)として扱われなくてはならない。
+/// - `wav`がヌルポインタでないならば、<a href="#voicevox-core-safety">読み込みと書き込みについて有効</a>でなければならない。
+/// - `wav`がヌルポインタでないならば、以後<b>ダングリングポインタ</b>(_dangling pointer_)として扱われなくてはならない。
 /// }
 ///
 /// \no-orig-impl{voicevox_wav_free}
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn voicevox_wav_free(wav: *mut u8) {
     init_logger_once();
     U8_SLICE_OWNER.drop_for(wav);
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// 結果コードに対応したメッセージ文字列を取得する。
 ///
@@ -1466,7 +1482,7 @@ pub extern "C" fn voicevox_wav_free(wav: *mut u8) {
 /// }
 ///
 /// \no-orig-impl{voicevox_error_result_to_message}
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn voicevox_error_result_to_message(
     result_code: VoicevoxResultCode,
 ) -> *const c_char {
@@ -1524,7 +1540,6 @@ pub enum VoicevoxUserDictWordType {
     VOICEVOX_USER_DICT_WORD_TYPE_SUFFIX = 4,
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// ::VoicevoxUserDictWord を最低限のパラメータで作成する。
 ///
@@ -1534,7 +1549,7 @@ pub enum VoicevoxUserDictWordType {
 /// @returns ::VoicevoxUserDictWord
 ///
 /// \orig-impl{voicevox_user_dict_word_make}
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn voicevox_user_dict_word_make(
     surface: *const c_char,
     pronunciation: *const c_char,
@@ -1550,20 +1565,18 @@ pub extern "C" fn voicevox_user_dict_word_make(
     }
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// ユーザー辞書をb>構築</b>(_construct_)する。
 ///
 /// @returns ::VoicevoxUserDict
 ///
 /// \orig-impl{voicevox_user_dict_new}
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn voicevox_user_dict_new() -> NonNull<VoicevoxUserDict> {
     init_logger_once();
     VoicevoxUserDict::new(Default::default())
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// ユーザー辞書にファイルを読み込ませる。
 ///
@@ -1576,7 +1589,7 @@ pub extern "C" fn voicevox_user_dict_new() -> NonNull<VoicevoxUserDict> {
 /// }
 ///
 /// \orig-impl{voicevox_user_dict_load}
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn voicevox_user_dict_load(
     user_dict: *const VoicevoxUserDict,
     dict_path: *const c_char,
@@ -1590,7 +1603,6 @@ pub unsafe extern "C" fn voicevox_user_dict_load(
     })())
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// ユーザー辞書に単語を追加する。
 ///
@@ -1608,7 +1620,7 @@ pub unsafe extern "C" fn voicevox_user_dict_load(
 /// }
 ///
 /// \orig-impl{voicevox_user_dict_add_word}
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn voicevox_user_dict_add_word(
     user_dict: *const VoicevoxUserDict,
     word: *const VoicevoxUserDictWord,
@@ -1616,15 +1628,16 @@ pub unsafe extern "C" fn voicevox_user_dict_add_word(
 ) -> VoicevoxResultCode {
     init_logger_once();
     into_result_code_with_error((|| {
-        let word = word.read_unaligned().try_into_word()?;
+        // SAFETY: The safety contract must be upheld by the caller.
+        let word = unsafe { word.read_unaligned().try_into_word() }?;
         let uuid = user_dict.body().add_word(word)?;
-        output_word_uuid.write_unaligned(uuid.into_bytes());
+        // SAFETY: The safety contract must be upheld by the caller.
+        unsafe { output_word_uuid.write_unaligned(uuid.into_bytes()) };
 
         Ok(())
     })())
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// ユーザー辞書の単語を更新する。
 ///
@@ -1639,7 +1652,7 @@ pub unsafe extern "C" fn voicevox_user_dict_add_word(
 /// }
 ///
 /// \orig-impl{voicevox_user_dict_update_word}
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn voicevox_user_dict_update_word(
     user_dict: *const VoicevoxUserDict,
     word_uuid: &[u8; 16],
@@ -1648,14 +1661,14 @@ pub unsafe extern "C" fn voicevox_user_dict_update_word(
     init_logger_once();
     into_result_code_with_error((|| {
         let word_uuid = Uuid::from_slice(word_uuid).map_err(CApiError::InvalidUuid)?;
-        let word = word.read_unaligned().try_into_word()?;
+        // SAFETY: The safety contract must be upheld by the caller.
+        let word = unsafe { word.read_unaligned().try_into_word() }?;
         user_dict.body().update_word(word_uuid, word)?;
 
         Ok(())
     })())
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// ユーザー辞書から単語を削除する。
 ///
@@ -1668,7 +1681,7 @@ pub unsafe extern "C" fn voicevox_user_dict_update_word(
 /// }
 ///
 /// \orig-impl{voicevox_user_dict_remove_word}
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn voicevox_user_dict_remove_word(
     user_dict: *const VoicevoxUserDict,
     word_uuid: &[u8; 16],
@@ -1681,7 +1694,6 @@ pub extern "C" fn voicevox_user_dict_remove_word(
     })())
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 // FIXME: infallibleなので、`char*`を戻り値にしてもよいはず
 /// ユーザー辞書の単語をJSON形式で出力する。
@@ -1697,7 +1709,7 @@ pub extern "C" fn voicevox_user_dict_remove_word(
 /// }
 ///
 /// \orig-impl{voicevox_user_dict_to_json}
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn voicevox_user_dict_to_json(
     user_dict: *const VoicevoxUserDict,
     output_json: NonNull<*mut c_char>,
@@ -1705,11 +1717,11 @@ pub unsafe extern "C" fn voicevox_user_dict_to_json(
     init_logger_once();
     let json = user_dict.body().to_json();
     let json = CString::new(json).expect("\\0を含まない文字列であることが保証されている");
-    output_json.write_unaligned(C_STRING_DROP_CHECKER.whitelist(json).into_raw());
+    // SAFETY: The safety contract must be upheld by the caller.
+    unsafe { output_json.write_unaligned(C_STRING_DROP_CHECKER.whitelist(json).into_raw()) };
     VoicevoxResultCode::VOICEVOX_RESULT_OK
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// 他のユーザー辞書をインポートする。
 ///
@@ -1718,7 +1730,7 @@ pub unsafe extern "C" fn voicevox_user_dict_to_json(
 /// @returns 結果コード
 ///
 /// \orig-impl{voicevox_user_dict_import}
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn voicevox_user_dict_import(
     user_dict: *const VoicevoxUserDict,
     other_dict: *const VoicevoxUserDict,
@@ -1730,7 +1742,6 @@ pub extern "C" fn voicevox_user_dict_import(
     })())
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// ユーザー辞書をファイルに保存する。
 ///
@@ -1742,20 +1753,20 @@ pub extern "C" fn voicevox_user_dict_import(
 /// }
 ///
 /// \orig-impl{voicevox_user_dict_save}
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn voicevox_user_dict_save(
     user_dict: *const VoicevoxUserDict,
     path: *const c_char,
 ) -> VoicevoxResultCode {
     init_logger_once();
     into_result_code_with_error((|| {
-        let path = ensure_utf8(CStr::from_ptr(path))?;
+        // SAFETY: The safety contract must be upheld by the caller.
+        let path = ensure_utf8(unsafe { CStr::from_ptr(path) })?;
         user_dict.body().save(path)?;
         Ok(())
     })())
 }
 
-// TODO: cbindgenが`#[unsafe(no_mangle)]`に対応したら`#[no_mangle]`を置き換える
 // SAFETY: voicevox_core_c_apiを構成するライブラリの中に、これと同名のシンボルは存在しない
 /// ユーザー辞書を<b>破棄</b>(_destruct_)する。
 ///
@@ -1763,10 +1774,10 @@ pub unsafe extern "C" fn voicevox_user_dict_save(
 ///
 /// この関数の呼び出し後に破棄し終えた対象にアクセスすると、プロセスを異常終了する。
 ///
-/// @param [in] user_dict 破棄対象
+/// @param [in] user_dict 破棄対象。nullable
 ///
 /// \no-orig-impl{voicevox_user_dict_delete}
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn voicevox_user_dict_delete(user_dict: *mut VoicevoxUserDict) {
     init_logger_once();
     user_dict.drop_body();

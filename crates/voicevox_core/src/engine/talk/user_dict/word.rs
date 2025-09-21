@@ -3,12 +3,10 @@ use std::{ops::RangeToInclusive, sync::LazyLock};
 use regex::Regex;
 use serde::{de::Error as _, Deserialize, Serialize, Serializer};
 
-use crate::{
-    error::ErrorRepr,
-    result::Result,
-    user_dict::part_of_speech_data::{
-        priority2cost, PartOfSpeechDetail, MAX_PRIORITY, MIN_PRIORITY, PART_OF_SPEECH_DETAIL,
-    },
+use crate::{error::ErrorRepr, result::Result};
+
+use super::part_of_speech_data::{
+    priority2cost, PartOfSpeechDetail, MAX_PRIORITY, MIN_PRIORITY, PART_OF_SPEECH_DETAIL,
 };
 
 /// ユーザー辞書の単語。
@@ -18,8 +16,8 @@ use crate::{
 /// VOICEVOX ENGINEと同じスキーマになっている。ただし今後の破壊的変更にて変わる可能性がある。[データのシリアライゼーション]を参照。
 ///
 /// [データのシリアライゼーション]: https://github.com/VOICEVOX/voicevox_core/blob/main/docs/guide/user/serialization.md
-#[doc(alias = "VoicevoxUserDictWord")]
-#[derive(Clone, Debug)]
+#[cfg_attr(doc, doc(alias = "VoicevoxUserDictWord"))]
+#[derive(Clone, PartialEq, Debug)]
 pub struct UserDictWord {
     /// 単語の表記。
     surface: String,
@@ -147,6 +145,7 @@ impl Serialize for UserDictWord {
 }
 
 /// [`UserDictWord`]のビルダー。
+#[derive(Debug)]
 pub struct UserDictWordBuilder {
     word_type: UserDictWordType,
     priority: u32,
@@ -194,7 +193,7 @@ static MORA_REGEX: LazyLock<Regex> = LazyLock::new(|| {
 static SPACE_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\p{Z}").unwrap());
 
 impl UserDictWord {
-    #[doc(alias = "voicevox_user_dict_word_make")]
+    #[cfg_attr(doc, doc(alias = "voicevox_user_dict_word_make"))]
     pub fn builder() -> UserDictWordBuilder {
         Default::default()
     }
@@ -361,8 +360,8 @@ impl Default for UserDictWordBuilder {
 }
 
 /// ユーザー辞書の単語の種類。
-#[doc(alias = "VoicevoxUserDictWordType")]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
+#[cfg_attr(doc, doc(alias = "VoicevoxUserDictWordType"))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Hash)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum UserDictWordType {
     /// 固有名詞。

@@ -5,10 +5,11 @@ use macros::{InferenceInputSignature, InferenceOperation, InferenceOutputSignatu
 use ndarray::{Array1, Array2};
 use serde::Deserialize;
 
-use crate::{manifest::SingingTeacherManifest, StyleType};
+use crate::StyleType;
 
 use super::super::{
-    InferenceDomain, InferenceInputSignature as _, InferenceOutputSignature as _, OutputTensor,
+    super::manifest::SingingTeacherManifest, InferenceDomain, InferenceInputSignature as _,
+    InferenceOutputSignature as _, OutputTensor,
 };
 
 pub(crate) enum SingingTeacherDomain {}
@@ -24,7 +25,7 @@ impl InferenceDomain for SingingTeacherDomain {
     }
 }
 
-#[derive(Clone, Copy, Deserialize, Enum, InferenceOperation)]
+#[derive(Clone, Copy, Debug, Deserialize, Enum, InferenceOperation)]
 #[serde(rename_all = "snake_case")]
 #[inference_operation(
     type Domain = SingingTeacherDomain;

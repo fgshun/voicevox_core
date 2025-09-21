@@ -5,17 +5,18 @@ use macros::{InferenceInputSignature, InferenceOperation, InferenceOutputSignatu
 use ndarray::{Array0, Array1, Array2};
 use serde::Deserialize;
 
-use crate::{manifest::ExperimentalTalkManifest, StyleType};
+use crate::StyleType;
 
 use super::super::{
-    InferenceDomain, InferenceInputSignature as _, InferenceOutputSignature as _, OutputTensor,
+    super::manifest::TalkManifest, InferenceDomain, InferenceInputSignature as _,
+    InferenceOutputSignature as _, OutputTensor,
 };
 
-pub(crate) enum ExperimentalTalkDomain {}
+pub(crate) enum TalkDomain {}
 
-impl InferenceDomain for ExperimentalTalkDomain {
-    type Operation = ExperimentalTalkOperation;
-    type Manifest = ExperimentalTalkManifest;
+impl InferenceDomain for TalkDomain {
+    type Operation = TalkOperation;
+    type Manifest = TalkManifest;
 
     fn style_types() -> &'static BTreeSet<StyleType> {
         static STYLE_TYPES: LazyLock<BTreeSet<StyleType>> =
@@ -24,12 +25,12 @@ impl InferenceDomain for ExperimentalTalkDomain {
     }
 }
 
-#[derive(Clone, Copy, Deserialize, Enum, InferenceOperation)]
+#[derive(Clone, Copy, Debug, Deserialize, Enum, InferenceOperation)]
 #[serde(rename_all = "snake_case")]
 #[inference_operation(
-    type Domain = ExperimentalTalkDomain;
+    type Domain = TalkDomain;
 )]
-pub(crate) enum ExperimentalTalkOperation {
+pub(crate) enum TalkOperation {
     #[inference_operation(
         type Input = PredictDurationInput;
         type Output = PredictDurationOutput;
@@ -43,16 +44,10 @@ pub(crate) enum ExperimentalTalkOperation {
     PredictIntonation,
 
     #[inference_operation(
-        type Input = GenerateFullIntermediateInput;
-        type Output = GenerateFullIntermediateOutput;
+        type Input = DecodeInput;
+        type Output = DecodeOutput;
     )]
-    GenerateFullIntermediate,
-
-    #[inference_operation(
-        type Input = RenderAudioSegmentInput;
-        type Output = RenderAudioSegmentOutput;
-    )]
-    RenderAudioSegment,
+    Decode,
 }
 
 #[derive(InferenceInputSignature)]
@@ -91,28 +86,15 @@ pub(crate) struct PredictIntonationOutput {
 
 #[derive(InferenceInputSignature)]
 #[inference_input_signature(
-    type Signature = GenerateFullIntermediate;
+    type Signature = Decode;
 )]
-pub(crate) struct GenerateFullIntermediateInput {
+pub(crate) struct DecodeInput {
     pub(crate) f0: Array2<f32>,
     pub(crate) phoneme: Array2<f32>,
     pub(crate) speaker_id: Array1<i64>,
 }
 
 #[derive(InferenceOutputSignature)]
-pub(crate) struct GenerateFullIntermediateOutput {
-    pub(crate) spec: Array2<f32>,
-}
-
-#[derive(InferenceInputSignature)]
-#[inference_input_signature(
-    type Signature = RenderAudioSegment;
-)]
-pub(crate) struct RenderAudioSegmentInput {
-    pub(crate) spec: Array2<f32>,
-}
-
-#[derive(InferenceOutputSignature)]
-pub(crate) struct RenderAudioSegmentOutput {
+pub(crate) struct DecodeOutput {
     pub(crate) wave: Array1<f32>,
 }

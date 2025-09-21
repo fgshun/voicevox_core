@@ -1,11 +1,11 @@
 use std::str::FromStr;
 
-use crate::{
-    engine::{self, open_jtalk::FullcontextExtractor},
-    AccentPhrase,
-};
 use jlabel::Label;
 use smallvec::SmallVec;
+
+use crate::AccentPhrase;
+
+use super::{super::mora_list::MORA_LIST_MINIMUM, open_jtalk::FullcontextExtractor};
 
 #[derive(thiserror::Error, Debug)]
 #[error("入力テキストからのフルコンテキストラベル抽出に失敗しました: {context}")]
@@ -173,27 +173,38 @@ pub fn mora_to_text(consonant: Option<&str>, vowel: &str) -> String {
         }
     );
     // もしカタカナに変換できなければ、引数で与えた文字列がそのまま返ってくる
-    engine::mora2text(&mora_text).to_string()
+    mora2text(&mora_text).to_string()
+}
+
+fn mora2text(mora: &str) -> &str {
+    for &[text, consonant, vowel] in MORA_LIST_MINIMUM {
+        if mora.len() >= consonant.len()
+            && &mora[..consonant.len()] == consonant
+            && &mora[consonant.len()..] == vowel
+        {
+            return text;
+        }
+    }
+    mora
 }
 
 #[cfg(test)]
 mod tests {
-    use rstest_reuse::*;
-
-    use ::test_util::OPEN_JTALK_DIC_DIR;
-    use rstest::rstest;
-
     use std::str::FromStr;
 
-    use crate::{
-        engine::{
-            full_context_label::{extract_full_context_label, generate_accent_phrases},
-            open_jtalk::FullcontextExtractor,
-            Mora,
-        },
-        AccentPhrase,
-    };
+    use ::test_util::OPEN_JTALK_DIC_DIR;
     use jlabel::Label;
+    use pretty_assertions::assert_eq;
+    use rstest::rstest;
+    use rstest_reuse::*;
+
+    use crate::AccentPhrase;
+
+    use super::super::{
+        full_context_label::{extract_full_context_label, generate_accent_phrases},
+        open_jtalk::FullcontextExtractor,
+        Mora,
+    };
 
     fn mora(text: &str, consonant: Option<&str>, vowel: &str) -> Mora {
         Mora {
@@ -453,5 +464,16 @@ mod tests {
             &extract_full_context_label(&open_jtalk.0, text).unwrap(),
             accent_phrase
         );
+    }
+
+    #[rstest]
+    #[case("da", "ダ")]
+    #[case("N", "ン")]
+    #[case("cl", "ッ")]
+    #[case("sho", "ショ")]
+    #[case("u", "ウ")]
+    #[case("fail", "fail")]
+    fn test_mora2text(#[case] mora: &str, #[case] text: &str) {
+        assert_eq!(super::mora2text(mora), text);
     }
 }
